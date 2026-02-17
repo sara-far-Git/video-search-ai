@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from app.database import create_tables
 import shutil
 import os
@@ -36,7 +36,7 @@ def root():
 
 
 @app.post("/upload-video")
-async def upload_video(file: UploadFile = File(...)):
+async def upload_video(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
 
     print("UPLOAD ENDPOINT HIT")  # ← לבדיקה
 
@@ -45,20 +45,24 @@ async def upload_video(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    analysis = analyze_video(file_path)
-
-    # Persist detections to DB so the /search endpoint can return results
-    if analysis:
+    # Schedule analysis in the background to avoid blocking the request
+    def process_video(path: str):
         try:
-            save_detections(analysis)
+            analysis = analyze_video(path)
+            if analysis:
+                save_detections(analysis)
         except Exception as e:
-            # Log but do not fail the upload response
-            print(f"Failed to save detections: {e}")
+            print(f"Background analyze/save failed: {e}")
+
+    if background_tasks is not None:
+        background_tasks.add_task(process_video, file_path)
+    else:
+        # Fallback if BackgroundTasks not provided
+        process_video(file_path)
 
     return {
         "filename": file.filename,
-        "saved": len(analysis) if analysis else 0,
-        "analysis": analysis
+        "processing": True
     }
 @app.get("/search")
 def search(object: str):
