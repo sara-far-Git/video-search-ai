@@ -3,9 +3,19 @@ from app.database import create_tables
 import shutil
 import os
 from app.analyzer import analyze_video
-from app.database import save_detections
+from app.database import save_detections, search_object
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # לפיתוח בלבד
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 create_tables()
 
 UPLOAD_FOLDER = "uploads"
@@ -33,3 +43,7 @@ async def upload_video(file: UploadFile = File(...)):
         "filename": file.filename,
         "analysis": analysis
     }
+@app.get("/search")
+def search(object: str):
+    results = search_object(object)
+    return {"results": results}

@@ -35,3 +35,20 @@ def save_detections(detections):
 
     conn.commit()
     conn.close()
+
+def search_object(object_name):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT object, time FROM detections WHERE object = ?",
+        (object_name,)
+    )
+
+    results = cursor.fetchall()
+    conn.close()
+
+    return [
+        {"object": row[0], "time": row[1]}
+        for row in results
+    ]
