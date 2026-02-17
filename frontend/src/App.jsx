@@ -28,6 +28,7 @@ function App() {
   const [analysis, setAnalysis] = useState(null)
   const [statusMessage, setStatusMessage] = useState(null)
   const [videoName, setVideoName] = useState('')
+  const [canPlay, setCanPlay] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -92,6 +93,7 @@ function App() {
 
       setAnalysis(data.analysis)
       setVideoName(data.filename)
+      setCanPlay(false)
       setStatusMessage({ type: 'success', text: '✅ הניתוח הושלם! אפשר לבצע חיפוש במאגר.' })
     } catch (err) {
       clearInterval(progressInterval)
@@ -143,7 +145,12 @@ function App() {
               ref={videoRef}
               width={600}
               controls
-              src={`${API_URL}/videos/${videoName}`}
+              src={`${API_URL}/videos/${encodeURIComponent(videoName)}`}
+              onLoadedMetadata={() => setCanPlay(true)}
+              onError={() => {
+                setCanPlay(false)
+                setStatusMessage({ type: 'error', text: '❌ לא ניתן לטעון את הוידאו (מקודד/נתיב). ודא שהשם תקין וקיים.' })
+              }}
               style={{maxWidth: '100%', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)'}}
             />
           </section>
@@ -262,7 +269,7 @@ function App() {
                       🕐 זמן:
                       <span className="time-value">{formatTime(result.time)}</span>
                     </div>
-                    {videoRef.current && (
+                    {(videoRef.current && canPlay) ? (
                       <div style={{marginTop: '0.5rem'}}>
                         <button
                           className="search-btn"
@@ -272,6 +279,12 @@ function App() {
                           }}
                         >
                           קפוץ לזמן
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{marginTop: '0.5rem'}}>
+                        <button className="search-btn" disabled>
+                          קפוץ לזמן (נגן נטען)
                         </button>
                       </div>
                     )}
