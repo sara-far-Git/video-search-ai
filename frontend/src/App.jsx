@@ -89,7 +89,7 @@ function App() {
       const data = await response.json()
 
       setAnalysis(data.analysis)
-      setStatusMessage({ type: 'success', text: `✅ הניתוח הושלם! נמצאו ${data.analysis?.length || 0} זיהויים` })
+      setStatusMessage({ type: 'success', text: '✅ הניתוח הושלם! אפשר לבצע חיפוש במאגר.' })
     } catch (err) {
       clearInterval(progressInterval)
       setStatusMessage({ type: 'error', text: '❌ שגיאה בהעלאת הסרטון. ודא שהשרת פעיל.' })
@@ -198,19 +198,7 @@ function App() {
             </div>
           )}
 
-          {analysis && analysis.length > 0 && (
-            <div className="analysis-section">
-              <h3>🔍 אובייקטים שזוהו בסרטון</h3>
-              <div className="analysis-tags">
-                {analysis.map((item, i) => (
-                  <span className="analysis-tag" key={i}>
-                    {getObjectEmoji(item.object)} {item.object}
-                    <span className="tag-time">{formatTime(item.time)}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Removed analysis list per request: keep only search */}
         </section>
 
         {/* Divider */}

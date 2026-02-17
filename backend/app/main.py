@@ -5,6 +5,12 @@ import os
 from app.analyzer import analyze_video
 from app.database import save_detections, search_object
 from fastapi.middleware.cors import CORSMiddleware
+try:
+    from app.translator import translate_to_english
+except Exception:
+    # Fallback: if translator dependency is missing, just use lowercase input
+    def translate_to_english(text: str):
+        return text.lower()
 
 
 app = FastAPI()
@@ -39,11 +45,29 @@ async def upload_video(file: UploadFile = File(...)):
 
     analysis = analyze_video(file_path)
 
+    # Persist detections to DB so the /search endpoint can return results
+    if analysis:
+        try:
+            save_detections(analysis)
+        except Exception as e:
+            # Log but do not fail the upload response
+            print(f"Failed to save detections: {e}")
+
     return {
         "filename": file.filename,
+        "saved": len(analysis) if analysis else 0,
         "analysis": analysis
     }
 @app.get("/search")
 def search(object: str):
-    results = search_object(object)
-    return {"results": results}
+
+    translated = translate_to_english(object)
+
+    results = search_object(translated)
+
+    return {
+        "query": object,
+        "translated": translated,
+        "results": results
+    }
+
