@@ -6,6 +6,7 @@ from app.analyzer import analyze_video
 from fastapi.staticfiles import StaticFiles
 from app.database import save_detections, search_object
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 try:
     from app.translator import translate_to_english
 except Exception:
@@ -30,6 +31,28 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+VIDEO_EXT_MAP = {
+    "video/mp4": ".mp4",
+    "video/x-msvideo": ".avi",
+    "video/avi": ".avi",
+    "video/quicktime": ".mov",
+    "video/x-quicktime": ".mov",
+    "video/x-matroska": ".mkv",
+}
+
+
+def ensure_extension(filename: str, content_type: Optional[str]) -> str:
+    # If filename already has an extension, keep it
+    base, ext = os.path.splitext(filename)
+    if ext:
+        return filename
+    # Otherwise, infer from content_type
+    if content_type and content_type in VIDEO_EXT_MAP:
+        return f"{filename}{VIDEO_EXT_MAP[content_type]}"
+    # Default to .mp4 if unknown
+    return f"{filename}.mp4"
+
+
 @app.get("/")
 def root():
     return {"message": "Video Search API is running"}
@@ -40,7 +63,8 @@ async def upload_video(file: UploadFile = File(...), background_tasks: Backgroun
 
     print("UPLOAD ENDPOINT HIT")  # ← לבדיקה
 
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    safe_name = ensure_extension(file.filename, getattr(file, "content_type", None))
+    file_path = os.path.join(UPLOAD_FOLDER, safe_name)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -61,7 +85,7 @@ async def upload_video(file: UploadFile = File(...), background_tasks: Backgroun
         process_video(file_path)
 
     return {
-        "filename": file.filename,
+        "filename": safe_name,
         "processing": True
     }
 @app.get("/search")
