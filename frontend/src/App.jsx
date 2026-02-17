@@ -27,6 +27,7 @@ function App() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [analysis, setAnalysis] = useState(null)
   const [statusMessage, setStatusMessage] = useState(null)
+  const [videoName, setVideoName] = useState('')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
@@ -34,6 +35,7 @@ function App() {
 
   const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef(null)
+  const videoRef = useRef(null)
 
   // === Upload ===
   const handleFileSelect = (e) => {
@@ -89,6 +91,7 @@ function App() {
       const data = await response.json()
 
       setAnalysis(data.analysis)
+      setVideoName(data.filename)
       setStatusMessage({ type: 'success', text: '✅ הניתוח הושלם! אפשר לבצע חיפוש במאגר.' })
     } catch (err) {
       clearInterval(progressInterval)
@@ -132,6 +135,19 @@ function App() {
       </header>
 
       <main className="main-content">
+        {/* Video Player */}
+        {videoName && (
+          <section className="upload-section" style={{marginTop: '1rem'}}>
+            <h3 style={{color: '#c4b5fd', marginTop: 0}}>נגן וידאו</h3>
+            <video
+              ref={videoRef}
+              width={600}
+              controls
+              src={`${API_URL}/videos/${videoName}`}
+              style={{maxWidth: '100%', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)'}}
+            />
+          </section>
+        )}
         {/* Upload Section */}
         <section className="upload-section">
           <div
@@ -246,6 +262,19 @@ function App() {
                       🕐 זמן:
                       <span className="time-value">{formatTime(result.time)}</span>
                     </div>
+                    {videoRef.current && (
+                      <div style={{marginTop: '0.5rem'}}>
+                        <button
+                          className="search-btn"
+                          onClick={() => {
+                            videoRef.current.currentTime = result.time
+                            videoRef.current.play()
+                          }}
+                        >
+                          קפוץ לזמן
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

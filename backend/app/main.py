@@ -3,6 +3,7 @@ from app.database import create_tables
 import shutil
 import os
 from app.analyzer import analyze_video
+from fastapi.staticfiles import StaticFiles
 from app.database import save_detections, search_object
 from fastapi.middleware.cors import CORSMiddleware
 try:
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/videos", StaticFiles(directory="uploads"), name="videos")
 
 create_tables()
 
